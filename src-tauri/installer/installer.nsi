@@ -49,7 +49,11 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 ;--------------------------------
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "${LICENSEFILE}"
+; License page omitted: Tauri 2's NSIS bundle schema doesn't accept a
+; `license` field under bundle.windows.nsis, so ${LICENSEFILE} is never
+; defined. AGPL-3.0-only ships in the install dir as LICENSE next to
+; the binary instead.
+; !insertmacro MUI_PAGE_LICENSE "${LICENSEFILE}"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
