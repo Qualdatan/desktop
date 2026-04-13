@@ -128,6 +128,13 @@ fn main() {
             reveal_in_folder
         ])
         .setup(move |app| {
+            // DEBUG: open devtools on startup so we can inspect why the
+            // frontend renders blank. Remove once the white-screen issue is
+            // resolved.
+            if let Some(window) = app.get_webview_window("main") {
+                window.open_devtools();
+            }
+
             let handle = app.handle().clone();
             let state = state_setup.clone();
             tauri::async_runtime::spawn(async move {
