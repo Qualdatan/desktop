@@ -58,6 +58,49 @@ durch Phase H unter `src-tauri/binaries/qualdatan-sidecar[.exe]` abgelegt.
 - Lokaler Preview: `pip install mkdocs mkdocs-material && mkdocs serve`
 - Docs-Policy und -Struktur: [CLAUDE.md](CLAUDE.md)
 
+## Building installers
+
+Der Windows-Installer (MSI) wird via GitHub Actions gebaut
+(`.github/workflows/desktop-build.yml`). Trigger:
+
+- Push eines Tags `v*` (z. B. `git tag v0.1.0 && git push --tags`).
+- Manuell via `workflow_dispatch` im Actions-Tab.
+
+Die Pipeline:
+
+1. `cd sidecar && uv sync --extra dev`
+2. `uv run pyinstaller qualdatan_sidecar.spec --noconfirm --clean`
+   → `sidecar/dist/qualdatan-sidecar.exe`
+3. Kopie nach
+   `src-tauri/binaries/qualdatan-sidecar-x86_64-pc-windows-msvc.exe`
+   (Tauri-Target-Triple-Konvention für `externalBin`).
+4. `pnpm install && pnpm gen:sidecar && pnpm tauri build`
+5. Upload der MSI aus `src-tauri/target/release/bundle/msi/` als Artifact.
+
+Lokales Äquivalent (auf Windows, mit `uv`, `pnpm`, Rust-Toolchain):
+
+```powershell
+# 1. Sidecar bauen
+cd sidecar
+uv sync --extra dev
+uv run pyinstaller qualdatan_sidecar.spec --noconfirm --clean
+cd ..
+
+# 2. Binary an Tauri-konforme Stelle legen
+New-Item -ItemType Directory -Force -Path src-tauri/binaries | Out-Null
+Copy-Item sidecar/dist/qualdatan-sidecar.exe `
+  src-tauri/binaries/qualdatan-sidecar-x86_64-pc-windows-msvc.exe -Force
+
+# 3. Frontend + Tauri-Installer
+pnpm install
+pnpm gen:sidecar
+pnpm tauri build
+```
+
+ARM64 (`aarch64-pc-windows-msvc`) ist vorgemerkt, sobald ein
+GitHub-Hosted ARM64-Runner verfügbar ist — siehe TODO in der
+Workflow-Matrix.
+
 ## Lizenz
 
 AGPL-3.0-only — siehe [LICENSE](LICENSE). Die Affero-Klausel greift wenn

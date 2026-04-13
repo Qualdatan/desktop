@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Desktop installer build: compiles the Python sidecar with PyInstaller,
+# drops it into ``src-tauri/binaries/`` under Tauri's required
+# target-triple filename, then runs ``tauri build`` to produce an MSI.
+#
+# NOTE on location: this workflow lives inside the *desktop* submodule
+# (``repos/desktop/.github/workflows/``). On push to the desktop repo it
+# therefore checks out the desktop repo directly -- paths below are
+# relative to the desktop repo root (e.g. ``sidecar/`` not
+# ``repos/desktop/sidecar/``). The existing ``sidecar-ci.yml`` and
+# ``docs.yml`` use the same convention.
+#
+# The umbrella repo does not trigger this workflow; releases are cut from
+# the desktop submodule's own tags.
+
+name: desktop-build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: add ``windows-11-arm`` (or equivalent GH-hosted ARM64 runner)
+        # once available; Tauri target triple is
+        # ``aarch64-pc-windows-msvc``.
+        os: [windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      # -----------------------------------------------------------------
+      # Sidecar: build single-file PyInstaller binary
+      # -----------------------------------------------------------------
+      - name: Sidecar -- uv sync
+        working-directory: sidecar
+        run: uv sync --extra dev
+
+      - name: Sidecar -- PyInstaller build
+        working-directory: sidecar
+        run: uv run pyinstaller qualdatan_sidecar.spec --noconfirm --clean
+
+      - name: Sidecar -- place binary under Tauri externalBin path
+        shell: pwsh
+        run: |
+          $bin = "sidecar/dist/qualdatan-sidecar.exe"
+          if (-not (Test-Path $bin)) {
+            Write-Error "Expected PyInstaller output $bin not found"
+            exit 1
+          }
+          New-Item -ItemType Directory -Force -Path "src-tauri/binaries" | Out-Null
+          # Tauri v2 resolves externalBin "binaries/qualdatan-sidecar" to
+          # "binaries/qualdatan-sidecar-<rust target triple>(.exe)".
+          Copy-Item $bin "src-tauri/binaries/qualdatan-sidecar-x86_64-pc-windows-msvc.exe" -Force
+
+      # -----------------------------------------------------------------
+      # Frontend + Tauri bundle
+      # -----------------------------------------------------------------
+      - name: Frontend -- pnpm install
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Frontend -- generate typed sidecar client
+        run: pnpm gen:sidecar
+
+      - name: Tauri build (MSI)
+        run: pnpm tauri build
+
+      # -----------------------------------------------------------------
+      # Artifacts
+      # -----------------------------------------------------------------
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualdatan-desktop-${{ matrix.os }}-msi
+          path: src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
