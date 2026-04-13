@@ -2,9 +2,9 @@
 """Qualdatan sidecar: FastAPI app that exposes qualdatan-core and
 qualdatan-plugins over a loopback HTTP API for the Tauri desktop frontend.
 
-Phase F fills in ``app``, ``handshake`` (stdin port+token negotiation),
-``routes`` (projects, runs, codebook, export, plugins) and the SSE
-progress stream.
+Phase F freezes the contract (Pydantic models + endpoint signatures);
+Welle 1 fills in endpoint bodies, Welle 2 generates the frontend client
+from the checked-in ``contract/openapi.json``.
 """
 
 __version__ = "0.1.0"
