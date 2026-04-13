@@ -75,9 +75,24 @@ jobs:
       # -----------------------------------------------------------------
       # Sidecar: build single-file PyInstaller binary
       # -----------------------------------------------------------------
-      - name: Sidecar -- uv sync
+      # qualdatan-core / qualdatan-plugins are workspace siblings under the
+      # umbrella but unavailable in the standalone desktop checkout. We
+      # bypass `uv sync` and install everything explicitly from git so
+      # pyproject.toml stays workspace-friendly.
+      - name: Sidecar -- create venv + install (git deps)
         working-directory: sidecar
-        run: uv sync --extra dev
+        shell: pwsh
+        run: |
+          uv venv
+          uv pip install `
+            git+https://github.com/Qualdatan/core.git@main `
+            git+https://github.com/Qualdatan/plugins.git@main `
+            "fastapi>=0.115" `
+            "uvicorn[standard]>=0.30" `
+            "pydantic>=2" `
+            "sse-starlette>=2.1" `
+            "pyinstaller>=6.8" `
+            -e .
 
       - name: Sidecar -- PyInstaller build
         working-directory: sidecar
