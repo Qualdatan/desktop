@@ -1,0 +1,158 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# winget manifest submission.
+#
+# Fires after PH12-TAURI's release workflow publishes a GitHub Release with the
+# NSIS installer attached. This job computes the installer URL + SHA256 from the
+# release asset, substitutes placeholders in the templates under ``winget/``,
+# and opens a PR against ``microsoft/winget-pkgs`` via komac
+# (https://github.com/russellbanks/Komac).
+#
+# First-time setup (maintainer, one-off):
+#   1. Fork https://github.com/microsoft/winget-pkgs on GitHub under an account
+#      the maintainer controls.
+#   2. Create a fine-grained Personal Access Token scoped to that fork with
+#      contents:read-write and pull-requests:read-write.
+#   3. Add the token to this repo's Actions secrets as ``WINGET_GH_TOKEN``.
+#
+# The job is opt-in: if ``WINGET_GH_TOKEN`` is missing it exits early with a
+# helpful message rather than failing the release pipeline. Upstream Microsoft
+# moderators review/merge the PR that komac opens.
+
+name: winget-submit
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to publish to winget (without the leading 'v'), e.g. 0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  submit-winget:
+    name: Submit to microsoft/winget-pkgs
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "release") {
+            $tag = "${{ github.event.release.tag_name }}"
+          } else {
+            $tag = "v${{ inputs.version }}"
+          }
+          $version = $tag -replace '^v', ''
+          "tag=$tag"         | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Tag=$tag Version=$version"
+
+      - name: Early-exit if WINGET_GH_TOKEN secret missing
+        id: gate
+        shell: pwsh
+        env:
+          WINGET_GH_TOKEN: ${{ secrets.WINGET_GH_TOKEN }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINGET_GH_TOKEN)) {
+            Write-Host "::notice::WINGET_GH_TOKEN is not configured -- skipping winget submission."
+            Write-Host "           Set the secret to a fine-grained PAT scoped to your fork of microsoft/winget-pkgs to enable this workflow."
+            "skip=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Download installer asset from release
+        if: steps.gate.outputs.skip == 'false'
+        id: asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          New-Item -ItemType Directory -Force -Path _winget_tmp | Out-Null
+
+          # Find the NSIS installer asset. Tauri 2's NSIS bundler names
+          # the file something like "<productName>_<version>_x64-setup.exe".
+          # We match *-setup.exe to stay tolerant of productName changes.
+          $assetsJson = gh release view $tag --repo "${{ github.repository }}" --json assets
+          $assets = ($assetsJson | ConvertFrom-Json).assets
+          $installer = $assets | Where-Object { $_.name -like "*x64-setup.exe" } | Select-Object -First 1
+          if ($null -eq $installer) {
+            Write-Error "No *-x64-setup.exe asset found on release $tag"
+            exit 1
+          }
+
+          $name = $installer.name
+          $url  = "https://github.com/${{ github.repository }}/releases/download/$tag/$name"
+
+          gh release download $tag --repo "${{ github.repository }}" --pattern $name --dir _winget_tmp
+          $sha = (Get-FileHash "_winget_tmp/$name" -Algorithm SHA256).Hash.ToUpper()
+
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "url=$url"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "sha256=$sha"| Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Installer: $name"
+          Write-Host "URL:       $url"
+          Write-Host "SHA256:    $sha"
+
+      - name: Render winget manifests
+        if: steps.gate.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $url     = "${{ steps.asset.outputs.url }}"
+          $sha     = "${{ steps.asset.outputs.sha256 }}"
+          $date    = (Get-Date -Format "yyyy-MM-dd")
+
+          $out = "_winget_out"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+          Get-ChildItem winget -Filter *.yaml | ForEach-Object {
+            (Get-Content $_.FullName -Raw) `
+              -replace '\{\{VERSION\}\}',         $version `
+              -replace '\{\{INSTALLER_URL\}\}',   $url     `
+              -replace '\{\{INSTALLER_SHA256\}\}',$sha     `
+              -replace '\{\{RELEASE_DATE\}\}',    $date    `
+              | Set-Content -NoNewline (Join-Path $out $_.Name)
+          }
+
+          Write-Host "Rendered manifests:"
+          Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)" }
+
+      - name: Install komac
+        if: steps.gate.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          # Pin via winget's own installation or cargo-binstall; here we use
+          # the official release binary for reproducibility.
+          $ver = "2.9.0"
+          $zip = "komac-$ver-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest -Uri "https://github.com/russellbanks/Komac/releases/download/v$ver/$zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath komac
+          echo "$PWD\komac" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: komac submit
+        if: steps.gate.outputs.skip == 'false'
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_GH_TOKEN }}
+        run: |
+          # `komac update` computes a diff against the latest published version
+          # of the package and opens a PR against microsoft/winget-pkgs. We
+          # pass the rendered manifests explicitly so komac does not regenerate
+          # them from the installer URL (keeps our custom tags/description).
+          komac update `
+            --identifier Qualdatan.Desktop `
+            --version "${{ steps.version.outputs.version }}" `
+            --urls "${{ steps.asset.outputs.url }}" `
+            --submit

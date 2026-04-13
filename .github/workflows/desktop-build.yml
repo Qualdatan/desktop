@@ -2,7 +2,10 @@
 #
 # Desktop installer build: compiles the Python sidecar with PyInstaller,
 # drops it into ``src-tauri/binaries/`` under Tauri's required
-# target-triple filename, then runs ``tauri build`` to produce an MSI.
+# target-triple filename, then runs ``tauri build`` to produce an NSIS
+# installer (.exe) and — bei gesetzten Updater-Secrets — eine Tauri-
+# Updater-Signatur (.sig). Beide Artefakte plus ein generiertes
+# ``latest.json`` werden auf Tag-Push als GitHub-Release hochgeladen.
 #
 # NOTE on location: this workflow lives inside the *desktop* submodule
 # (``repos/desktop/.github/workflows/``). On push to the desktop repo it
@@ -13,6 +16,10 @@
 #
 # The umbrella repo does not trigger this workflow; releases are cut from
 # the desktop submodule's own tags.
+#
+# Required GitHub-Secrets (fuer Phase 2 / Updater):
+#   TAURI_SIGNING_PRIVATE_KEY           — Inhalt von ~/.tauri/qualdatan.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  — Passphrase zu obigem Key
 
 name: desktop-build
 
@@ -23,7 +30,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -35,6 +42,10 @@ jobs:
         # ``aarch64-pc-windows-msvc``.
         os: [windows-latest]
     runs-on: ${{ matrix.os }}
+
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
     steps:
       - name: Checkout (with submodules)
@@ -85,7 +96,7 @@ jobs:
           Copy-Item $bin "src-tauri/binaries/qualdatan-sidecar-x86_64-pc-windows-msvc.exe" -Force
 
       # -----------------------------------------------------------------
-      # Frontend + Tauri bundle
+      # Frontend + Tauri bundle (NSIS)
       # -----------------------------------------------------------------
       - name: Frontend -- pnpm install
         run: pnpm install --frozen-lockfile=false
@@ -93,15 +104,87 @@ jobs:
       - name: Frontend -- generate typed sidecar client
         run: pnpm gen:sidecar
 
-      - name: Tauri build (MSI)
+      - name: Tauri build (NSIS + Updater signature)
         run: pnpm tauri build
 
       # -----------------------------------------------------------------
-      # Artifacts
+      # Collect artifacts: installer .exe + updater .sig
       # -----------------------------------------------------------------
-      - name: Upload MSI artifact
+      - name: Collect release artifacts
+        id: collect
+        shell: pwsh
+        run: |
+          $nsisDir = "src-tauri/target/release/bundle/nsis"
+          if (-not (Test-Path $nsisDir)) {
+            Write-Error "NSIS bundle directory not found: $nsisDir"
+            exit 1
+          }
+          $exe = Get-ChildItem "$nsisDir/*.exe" | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "No NSIS .exe produced in $nsisDir"
+            exit 1
+          }
+          $sig = Get-ChildItem "$nsisDir/*.exe.sig" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          $outDir = "release-assets"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          Copy-Item $exe.FullName "$outDir/"
+          if ($sig) { Copy-Item $sig.FullName "$outDir/" }
+
+          "installer_name=$($exe.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "installer_path=$outDir/$($exe.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          if ($sig) {
+            "signature_path=$outDir/$($sig.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "signature_path=" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Generate latest.json (Tauri updater manifest)
+        if: startsWith(github.ref, 'refs/tags/v') && steps.collect.outputs.signature_path != ''
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          $installer = "${{ steps.collect.outputs.installer_name }}"
+          $sigPath = "${{ steps.collect.outputs.signature_path }}"
+          $signature = Get-Content $sigPath -Raw
+          $pubDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          $notes = ""
+          try {
+            $notes = (git tag -l --format='%(contents)' $tag) -join "`n"
+          } catch { $notes = "" }
+
+          $manifest = [ordered]@{
+            version   = $version
+            notes     = $notes
+            pub_date  = $pubDate
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = $signature
+                url       = "https://github.com/Qualdatan/desktop/releases/download/$tag/$installer"
+              }
+            }
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Out-File -FilePath "release-assets/latest.json" -Encoding utf8
+
+      # -----------------------------------------------------------------
+      # Artifacts (CI) + GitHub Release upload (Tag push)
+      # -----------------------------------------------------------------
+      - name: Upload CI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: qualdatan-desktop-${{ matrix.os }}-msi
-          path: src-tauri/target/release/bundle/msi/*.msi
+          name: qualdatan-desktop-${{ matrix.os }}-nsis
+          path: release-assets/*
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*.exe
+            release-assets/*.exe.sig
+            release-assets/latest.json

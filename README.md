@@ -101,6 +101,119 @@ ARM64 (`aarch64-pc-windows-msvc`) ist vorgemerkt, sobald ein
 GitHub-Hosted ARM64-Runner verfügbar ist — siehe TODO in der
 Workflow-Matrix.
 
+## Releases & Updates
+
+Ab Phase H werden die Windows-Installer als **NSIS-Setup (.exe)** gebaut
+(nicht mehr MSI) und ueber **GitHub Releases** ausgeliefert. Installierte
+Apps pollen beim Start das Updater-Manifest `latest.json` und bieten dem
+Nutzer ein Update-Dialog an (Tauri-Updater-Plugin).
+
+### Einmalige Einrichtung (Maintainer)
+
+1. **Signing-Keypair lokal erzeugen** (einmalig, nicht einchecken):
+
+   ```powershell
+   pnpm tauri signer generate -w $HOME\.tauri\qualdatan.key
+   ```
+
+   Erzeugt `qualdatan.key` (privat, passphrase-geschuetzt) und
+   `qualdatan.key.pub` (public).
+
+2. **Public Key in `src-tauri/tauri.conf.json`** unter
+   `plugins.updater.pubkey` einsetzen (Inhalt von `qualdatan.key.pub`,
+   Base64-String ohne Newlines). Der Platzhalter
+   `REPLACE_WITH_PUBLIC_KEY` muss ersetzt werden, sonst weigert sich
+   Tauri beim Build.
+
+3. **GitHub-Secrets setzen** (Repo → Settings → Secrets → Actions):
+
+   - `TAURI_SIGNING_PRIVATE_KEY` — Inhalt von `~/.tauri/qualdatan.key`
+     (gesamte Datei als String).
+   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — zugehoerige Passphrase.
+
+### Release-Flow
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Der Workflow `.github/workflows/desktop-build.yml` erzeugt dann:
+
+- `Qualdatan Desktop_<version>_x64-setup.exe` (NSIS-Installer mit
+  Komponenten-Auswahl: Desktop App = Pflicht, TUI Launcher = optional).
+- `…_x64-setup.exe.sig` (Updater-Signatur, wenn Secrets gesetzt sind).
+- `latest.json` (Updater-Manifest, zeigt auf die obige `.exe`).
+
+Alle drei Dateien werden als Release-Assets am Tag veroeffentlicht
+(`https://github.com/Qualdatan/desktop/releases/tag/v0.1.0`).
+
+### Update-Flow (Installed App)
+
+Die App pollt beim Start
+
+```
+https://github.com/Qualdatan/desktop/releases/latest/download/latest.json
+```
+
+(GitHub leitet `latest` auf den jeweils neuesten Release um). Ist eine
+hoehere Version verfuegbar, zeigt Tauri einen Dialog mit Release-Notes
+an; bei Bestaetigung wird der NSIS-Installer heruntergeladen, gegen den
+Public-Key verifiziert und gestartet.
+
+### NSIS-Komponenten
+
+Der Installer fragt per **Component-Page**:
+
+| Komponente   | Default | Zweck |
+|--------------|---------|-------|
+| Desktop App  | an (RO) | Qualdatan-Hauptanwendung (Pflicht). |
+| TUI Launcher | aus     | Schreibt Marker fuer optionales `pipx install qualdatan-tui`. |
+
+Die TUI-Komponente installiert Python/pipx **nicht** automatisch; nach
+Setup zeigt NSIS den pipx-Befehl als MessageBox, und die Desktop-App
+liest `%LOCALAPPDATA%\Qualdatan\install_tui.flag`, um den Nutzer ggf.
+nochmals zu erinnern.
+
+## winget Distribution
+
+> Hinweis: Diese Sektion setzt den vorhergehenden Release-Flow voraus (siehe
+> "Building installers" weiter oben — dort laedt PH12-TAURI den NSIS-Installer
+> als Release-Asset hoch). Die winget-Submission fuehrt danach aus.
+
+Nach jedem GitHub-Release publiziert
+`.github/workflows/winget-submit.yml` einen Pull-Request gegen
+[`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs), damit
+Endnutzer die App per
+
+```powershell
+winget install Qualdatan.Desktop
+```
+
+installieren koennen. Die Manifest-Templates liegen unter
+[`winget/`](./winget) (Platzhalter `{{VERSION}}`, `{{INSTALLER_URL}}`,
+`{{INSTALLER_SHA256}}` werden im Workflow substituiert). Das Tooling ist
+[komac](https://github.com/russellbanks/Komac).
+
+### Einmalige Einrichtung durch den Maintainer
+
+1. `microsoft/winget-pkgs` forken (eigener GitHub-Account, da der PR aus
+   einem Fork kommen muss).
+2. Fine-grained Personal Access Token fuer diesen Fork erstellen
+   (`contents: read/write`, `pull-requests: read/write`).
+3. Token als Actions-Secret hinterlegen: **`WINGET_GH_TOKEN`**.
+4. Optional: Publisher-Namespace `Qualdatan` via den ersten PR bei
+   Microsoft registrieren lassen (Moderatoren-Review).
+
+### Opt-in-Verhalten
+
+Fehlt `WINGET_GH_TOKEN`, **endet der Workflow mit einem Hinweis** statt zu
+failen — das Release selbst bleibt also unberuehrt. Erst nach dem Hinzufuegen
+des Secrets werden kuenftige Releases automatisch bei winget eingereicht. Der
+eigentliche Merge des PRs erfolgt durch die Microsoft-Moderatoren upstream.
+
+Manuell ausloesbar via Actions-Tab (`workflow_dispatch` mit `version`-Input).
+
 ## Lizenz
 
 AGPL-3.0-only — siehe [LICENSE](LICENSE). Die Affero-Klausel greift wenn

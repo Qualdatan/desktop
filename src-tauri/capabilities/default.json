@@ -6,6 +6,7 @@
   "permissions": [
     "core:default",
     "core:window:default",
-    "core:app:default"
+    "core:app:default",
+    "updater:default"
   ]
 }

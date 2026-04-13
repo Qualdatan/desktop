@@ -1,0 +1,29 @@
+# Default locale manifest
+# Schema: https://github.com/microsoft/winget-pkgs/blob/master/doc/manifest/schema/1.6.0/defaultLocale.md
+PackageIdentifier: Qualdatan.Desktop
+PackageVersion: "{{VERSION}}"
+PackageLocale: en-US
+Publisher: Qualdatan
+PublisherUrl: https://github.com/Qualdatan
+PublisherSupportUrl: https://github.com/Qualdatan/desktop/issues
+PackageName: Qualdatan Desktop
+PackageUrl: https://github.com/Qualdatan/desktop
+License: AGPL-3.0-only
+LicenseUrl: https://github.com/Qualdatan/desktop/blob/main/LICENSE
+ShortDescription: "Qualitative research coding app / App fuer qualitative Forschung und Kodierung (NVivo/MAXQDA-Workflow, BIM-Projektanalyse)."
+Description: |
+  Qualdatan Desktop is an open-source desktop application for qualitative
+  research: interview transcript coding, PDF document annotation, and codebook
+  management. The Tauri-based app bundles a Python FastAPI sidecar (qualdatan-core +
+  qualdatan-plugins) behind a SvelteKit UI. Designed for NVivo/MAXQDA-compatible
+  workflows and BIM construction-project analysis.
+Tags:
+  - qualitative-research
+  - coding
+  - nvivo
+  - maxqda
+  - bim
+  - transcription
+  - pdf-annotation
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

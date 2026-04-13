@@ -1,0 +1,7 @@
+# Package version manifest (root)
+# Schema: https://github.com/microsoft/winget-pkgs/blob/master/doc/manifest/schema/1.6.0/version.md
+PackageIdentifier: Qualdatan.Desktop
+PackageVersion: "{{VERSION}}"
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

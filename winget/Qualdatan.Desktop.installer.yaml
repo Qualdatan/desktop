@@ -1,0 +1,26 @@
+# Installer manifest
+# Schema: https://github.com/microsoft/winget-pkgs/blob/master/doc/manifest/schema/1.6.0/installer.md
+PackageIdentifier: Qualdatan.Desktop
+PackageVersion: "{{VERSION}}"
+InstallerLocale: en-US
+InstallerType: nullsoft
+Scope: user
+ReleaseDate: "{{RELEASE_DATE}}"
+Installers:
+  - Architecture: x64
+    # TODO: verify that Tauri 2's NSIS bundler emits exactly this filename.
+    # Observed convention: "<productName>_<version>_<arch>-setup.exe" where
+    # productName comes from tauri.conf.json > productName. If PH12-TAURI sets
+    # productName to "Qualdatan Desktop" the actual file may be URL-encoded
+    # ("Qualdatan%20Desktop_..."). The winget-submit workflow resolves the
+    # real asset name at runtime via `gh release view`, so this template URL
+    # is a sensible default rather than a hard contract.
+    InstallerUrl: "https://github.com/Qualdatan/desktop/releases/download/v{{VERSION}}/Qualdatan_Desktop_{{VERSION}}_x64-setup.exe"
+    InstallerSha256: "{{INSTALLER_SHA256}}"
+    # NSIS installers built by Tauri 2 support silent install via /S and
+    # support per-user install mode.
+    InstallerSwitches:
+      Silent: "/S"
+      SilentWithProgress: "/S"
+ManifestType: installer
+ManifestVersion: 1.6.0
