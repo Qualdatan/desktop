@@ -37,7 +37,6 @@
     "longDescription": "Qualitative Analyse-Pipeline (Tauri-Shell + FastAPI-Sidecar).",
     "windows": {
       "nsis": {
-        "template": "installer/installer.nsi",
         "installMode": "perMachine",
         "languages": ["English", "German"],
         "displayLanguageSelector": false
