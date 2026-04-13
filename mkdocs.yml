@@ -1,0 +1,45 @@
+site_name: qualdatan-desktop
+site_description: Desktop app for Qualdatan — Tauri shell + React frontend + Python sidecar.
+site_url: https://qualdatan.github.io/desktop/
+repo_url: https://github.com/Qualdatan/desktop
+repo_name: Qualdatan/desktop
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: { icon: material/weather-sunny, name: Light mode }
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Installer: installer.md
+  - API Reference: api.md
+  - Changelog: changelog.md
