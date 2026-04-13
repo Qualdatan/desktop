@@ -53,15 +53,17 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Setup Node 20 (with pnpm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
@@ -71,6 +73,23 @@ jobs:
 
       - name: Setup Rust (stable)
         uses: dtolnay/rust-toolchain@stable
+
+      # Caches Cargo registry/git + src-tauri/target keyed on Cargo.lock.
+      # First run still cold (~6 min); subsequent ~2 min.
+      - name: Cache Cargo + target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # NSIS toolchain + nsis-tauri-utils.dll get downloaded by tauri-bundler
+      # on every fresh runner; cache them too.
+      - name: Cache Tauri bundler downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/tauri
+            ~/.cache/tauri
+          key: tauri-bundler-${{ runner.os }}-v1
 
       # -----------------------------------------------------------------
       # Sidecar: build single-file PyInstaller binary
