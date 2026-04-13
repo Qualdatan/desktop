@@ -124,6 +124,28 @@ jobs:
       - name: Frontend -- generate typed sidecar client
         run: pnpm gen:sidecar
 
+      # Generate placeholder app icons (Q on blue) and derive all
+      # platform sizes via `tauri icon`. Replace icons/ with real
+      # branding before public release.
+      - name: Generate placeholder icons
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $bmp = New-Object System.Drawing.Bitmap(1024, 1024)
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.Clear([System.Drawing.Color]::FromArgb(255, 30, 100, 180))
+          $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+          $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+          $font = New-Object System.Drawing.Font("Arial", 600, [System.Drawing.FontStyle]::Bold)
+          $sf = New-Object System.Drawing.StringFormat
+          $sf.Alignment = [System.Drawing.StringAlignment]::Center
+          $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
+          $rect = New-Object System.Drawing.RectangleF(0, 0, 1024, 1024)
+          $g.DrawString("Q", $font, [System.Drawing.Brushes]::White, $rect, $sf)
+          $bmp.Save("placeholder-icon.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          $g.Dispose(); $bmp.Dispose()
+          pnpm tauri icon placeholder-icon.png
+
       - name: Tauri build (NSIS + Updater signature)
         run: pnpm tauri build
 
