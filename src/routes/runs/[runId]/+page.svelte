@@ -21,7 +21,7 @@
     Progress,
     Spinner,
     Table
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { createResource } from '$lib/queryHelpers';
   import { api, apiBase, apiToken } from '$lib/sidecar';
 

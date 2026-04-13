@@ -20,7 +20,7 @@
     Alert,
     Badge,
     Spinner
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { api, apiBase, apiToken } from '$lib/sidecar';
 
   // --- Sidecar health ---

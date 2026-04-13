@@ -22,7 +22,7 @@
     FormGroup,
     Label,
     Input
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { api } from '$lib/sidecar';
   import { createResource } from '$lib/queryHelpers';
 

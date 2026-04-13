@@ -19,7 +19,7 @@
     "@tauri-apps/api": "^2.0.0",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
-    "sveltestrap": "^7.1.0"
+    "@sveltestrap/sveltestrap": "^7.1.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.5",

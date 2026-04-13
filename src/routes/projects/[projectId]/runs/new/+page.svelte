@@ -16,7 +16,7 @@
     Spinner,
     Badge,
     ButtonGroup
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { api } from '$lib/sidecar';
 
   type RunOut = { id: string };

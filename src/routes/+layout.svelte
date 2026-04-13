@@ -9,7 +9,7 @@
     NavItem,
     NavLink,
     Container
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
 
   let { children } = $props();
 </script>

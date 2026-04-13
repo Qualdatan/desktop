@@ -11,7 +11,7 @@
     Alert,
     Spinner,
     Badge
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { api } from '$lib/sidecar';
 
   type ExportResult = {

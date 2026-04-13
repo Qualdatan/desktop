@@ -16,7 +16,7 @@
     Input,
     Alert,
     Spinner
-  } from 'sveltestrap';
+  } from '@sveltestrap/sveltestrap';
   import { goto } from '$app/navigation';
   import { api } from '$lib/sidecar';
   import { createResource } from '$lib/queryHelpers';
