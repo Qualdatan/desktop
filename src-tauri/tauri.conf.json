@@ -38,6 +38,7 @@
     "windows": {
       "nsis": {
         "template": "installer/installer.nsi",
+        "license": "../LICENSE",
         "installMode": "perMachine",
         "languages": ["English", "German"],
         "displayLanguageSelector": false
@@ -51,7 +52,7 @@
         "https://github.com/Qualdatan/desktop/releases/latest/download/latest.json"
       ],
       "dialog": true,
-      "pubkey": "REPLACE_WITH_PUBLIC_KEY"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDk0OTRCNjBFMzY4QUIKUldTcmFPTmdTMGxKaXFOUnpFWS94aktJZHdZQTlCbFRmb3B3WTFRMU9sUk1Nd05TVDU5MGo5K3cK"
     }
   }
 }
