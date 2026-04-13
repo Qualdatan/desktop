@@ -1,0 +1,42 @@
+{
+  "name": "qualdatan-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "Qualdatan Desktop — Tauri shell + React frontend for the Qualdatan qualitative analysis pipeline.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "typecheck": "tsc --noEmit",
+    "gen:sidecar": "openapi-typescript sidecar/contract/openapi.json -o src/lib/sidecar.gen.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.56.0",
+    "@tanstack/react-router": "^1.58.0",
+    "@tauri-apps/api": "^2.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.441.0",
+    "openapi-fetch": "^0.12.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^22.5.4",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "openapi-typescript": "^7.4.0",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.5"
+  }
+}

@@ -703,7 +703,7 @@
     },
     "/codebook/{project_id}/codes/{code_id}": {
       "delete": {
-        "description": "Entfernt einen Codebook-Eintrag (nur Override bzw. Projekt-lokal).",
+        "description": "Entfernt einen Codebook-Override (Reset auf Bundle-Default).",
         "operationId": "delete_codebook_entry_codebook__project_id__codes__code_id__delete",
         "parameters": [
           {
@@ -960,7 +960,7 @@
     },
     "/healthz": {
       "get": {
-        "description": "Liveness-Check. Einziger Endpoint ohne Token-Gate.\n\nReturns:\n    ``{\"status\": \"ok\", \"version\": <sidecar-version>}``.",
+        "description": "Liveness-Check.\n\nReturns:\n    ``{\"status\": \"ok\", \"version\": <sidecar-version>}``.",
         "operationId": "healthz_healthz_get",
         "responses": {
           "200": {
@@ -1206,7 +1206,7 @@
     },
     "/projects": {
       "get": {
-        "description": "Listet alle Projekte.",
+        "description": "Listet alle Projekte (alphabetisch nach Name).",
         "operationId": "list_projects_projects_get",
         "parameters": [
           {
@@ -1318,7 +1318,7 @@
     },
     "/projects/{project_id}": {
       "delete": {
-        "description": "Loescht ein Projekt (inkl. aller Runs, Materialien, Overrides).",
+        "description": "Loescht ein Projekt (kaskadiert auf Runs/Materials/Overrides).",
         "operationId": "delete_project_projects__project_id__delete",
         "parameters": [
           {
@@ -1828,7 +1828,7 @@
     },
     "/runs/{run_id}/stream": {
       "get": {
-        "description": "Server-Sent-Events: ``ProgressEvent``-Stream eines laufenden Runs.\n\nDer Event-``data``-Anteil ist jeweils das JSON eines\n:class:`qualdatan_sidecar.contract.models.ProgressEvent`.",
+        "description": "Server-Sent-Events: ``ProgressEvent``-Stream eines laufenden Runs.\n\nIst der Run bereits in einem Terminal-Status, wird **ein** finales\nEvent gesendet und der Stream sofort geschlossen.",
         "operationId": "stream_run_runs__run_id__stream_get",
         "parameters": [
           {

@@ -13,6 +13,15 @@ Cargo.lock
 # Node
 node_modules/
 .vite/
+dist/
+pnpm-debug.log*
+
+# Generated client from OpenAPI (regen via `pnpm gen:sidecar`)
+src/lib/sidecar.gen.ts.bak
+
+# Tauri generated
+src-tauri/gen/
+src-tauri/binaries/
 
 # Installer artifacts
 installer/out/

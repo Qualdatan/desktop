@@ -38,6 +38,7 @@ dev = [
 ]
 
 [project.scripts]
+qualdatan-sidecar = "qualdatan_sidecar.bootstrap:main"
 qualdatan-sidecar-dump-openapi = "qualdatan_sidecar.contract.dump_openapi:main"
 
 # ---------------------------------------------------------------------------
