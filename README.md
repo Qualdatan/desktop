@@ -16,7 +16,7 @@ plus MVP-Views.
 ```
 sidecar/        FastAPI-Sidecar (Python-Paket qualdatan-sidecar, nicht PyPI)
 src-tauri/      Rust/Tauri-Backend (Phase G)
-src/            React/TypeScript-Frontend (Phase G)
+src/            Svelt-Frontend with Bootstrap for element styling (Phase G)
 installer/      PyInstaller + Tauri-Bundler, Matrix x64/ARM64 (Phase H)
 ```
 
