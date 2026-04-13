@@ -86,7 +86,9 @@ exe = EXE(
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    # console=False: no terminal window pops up at launch. Tauri reads the
+    # handshake JSON via piped stdout regardless of this flag.
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
