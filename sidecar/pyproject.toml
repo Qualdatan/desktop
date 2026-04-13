@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "qualdatan-sidecar"
 version = "0.1.0"
 description = "FastAPI sidecar for the Qualdatan desktop app; exposes qualdatan-core and qualdatan-plugins over a local HTTP API."
-readme = "../README.md"
 requires-python = ">=3.11"
 license = "AGPL-3.0-only"
 authors = [
@@ -16,7 +15,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Topic :: Scientific/Engineering",
     "Private :: Do Not Upload",
 ]
