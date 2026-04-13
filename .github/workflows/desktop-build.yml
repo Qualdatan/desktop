@@ -94,9 +94,13 @@ jobs:
             "pyinstaller>=6.8" `
             -e .
 
+      # `uv run` would resync against pyproject.toml (which lists
+      # qualdatan-core unresolvable outside the umbrella workspace).
+      # Invoke PyInstaller via the venv interpreter directly.
       - name: Sidecar -- PyInstaller build
         working-directory: sidecar
-        run: uv run pyinstaller qualdatan_sidecar.spec --noconfirm --clean
+        shell: pwsh
+        run: .venv\Scripts\python.exe -m PyInstaller qualdatan_sidecar.spec --noconfirm --clean
 
       - name: Sidecar -- place binary under Tauri externalBin path
         shell: pwsh
