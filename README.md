@@ -20,6 +20,12 @@ src/            Svelt-Frontend with Bootstrap for element styling (Phase G)
 installer/      PyInstaller + Tauri-Bundler, Matrix x64/ARM64 (Phase H)
 ```
 
+## Dokumentation
+
+- Live-Site: https://qualdatan.github.io/desktop/
+- Lokaler Preview: `pip install mkdocs mkdocs-material && mkdocs serve`
+- Docs-Policy und -Struktur: [CLAUDE.md](CLAUDE.md)
+
 ## Lizenz
 
 AGPL-3.0-only — siehe [LICENSE](LICENSE). Die Affero-Klausel greift wenn
