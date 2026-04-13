@@ -10,9 +10,11 @@ build/
 target/
 Cargo.lock
 
-# Node
+# Node / SvelteKit
 node_modules/
 .vite/
+.svelte-kit/
+build/
 dist/
 pnpm-debug.log*
 

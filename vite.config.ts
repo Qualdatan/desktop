@@ -1,26 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "node:path";
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
 
-// Tauri erwartet den Dev-Server auf einem festen Port; 1420 ist die
-// Tauri-Default-Konvention.
+// Tauri-Konvention: Feste Port-Nummer 1420 auf 127.0.0.1, damit der
+// Rust-Shell (src-tauri/tauri.conf.json -> devUrl) den Dev-Server findet.
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+  plugins: [sveltekit()],
   clearScreen: false,
   server: {
     port: 1420,
     strictPort: true,
+    host: '127.0.0.1'
   },
-  envPrefix: ["VITE_", "TAURI_"],
-  build: {
-    target: "es2022",
-    minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
-    sourcemap: !!process.env.TAURI_DEBUG,
-  },
+  // VITE_* fuer Browser-Fallback (Sidecar-Port/Token ausserhalb Tauri),
+  // TAURI_* fuer Tauri-2-Build-Infos.
+  envPrefix: ['VITE_', 'TAURI_']
 });

@@ -1,7 +1,7 @@
 # qualdatan-desktop
 
 Desktop-App fuer [Qualdatan](https://github.com/Qualdatan):
-Tauri-Shell (Rust) + React-Frontend (TypeScript/Vite/Tailwind/shadcn) +
+Tauri-Shell (Rust) + SvelteKit-Frontend (TypeScript, adapter-static, sveltestrap/Bootstrap 5) +
 Python-Sidecar (FastAPI ueber
 [qualdatan-core](https://github.com/Qualdatan/core) und
 [qualdatan-plugins](https://github.com/Qualdatan/plugins)).
@@ -10,14 +10,16 @@ Windows-Installer fuer x64 und ARM64 werden ueber GitHub Releases
 ausgeliefert (keine PyPI-Veroeffentlichung).
 
 **Status**: Scaffold (Phase G, Welle 1). Phase F baut den Sidecar
-(`sidecar/`), Welle 2 fuellt die MVP-Views unter `src/views/`.
+(`sidecar/`), Welle 2 fuellt die MVP-Views unter `src/routes/`.
 
 ## Layout
 
 ```
 sidecar/        FastAPI-Sidecar (Python-Paket qualdatan-sidecar, nicht PyPI)
 src-tauri/      Rust/Tauri-Backend (spawnt Sidecar, verteilt Port+Token)
-src/            React-Frontend (TS/Vite), shadcn-UI, TanStack Query+Router
+src/            SvelteKit-Frontend (TS/Vite, sveltestrap, Bootstrap 5)
+  routes/       File-based Routing (8 Views, SPA via adapter-static)
+  lib/          sidecar.ts (typed client) + queryHelpers.ts (SWR-Runes)
 installer/      PyInstaller + Tauri-Bundler, Matrix x64/ARM64 (Phase H)
 ```
 
@@ -28,9 +30,13 @@ installer/      PyInstaller + Tauri-Bundler, Matrix x64/ARM64 (Phase H)
 pnpm install           # oder: npm install
 pnpm gen:sidecar       # generiert src/lib/sidecar.gen.ts aus openapi.json
 
-# Dev-Mode (startet Vite + Tauri, Tauri spawnt Sidecar)
-pnpm tauri dev
+# Dev-Mode (startet Vite auf 127.0.0.1:1420 + Tauri, Tauri spawnt Sidecar)
+pnpm tauri:dev
 ```
+
+Fuer reines Browser-Debugging ohne Tauri: `pnpm dev` und die Env-Variablen
+`VITE_SIDECAR_PORT` / `VITE_SIDECAR_TOKEN` setzen, nachdem der Sidecar
+manuell gestartet wurde.
 
 Voraussetzung im Dev-Modus: Entweder liegt `qualdatan-sidecar` auf dem
 PATH (empfohlen: `cd sidecar && uv sync && uv run python -m
